@@ -6,6 +6,7 @@ credentials_heroku.txt
 
 ##Cache stuff
 __pycache__
+.gitattributes
 
 # General
 .DS_Store
