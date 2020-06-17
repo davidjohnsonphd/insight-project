@@ -1,7 +1,11 @@
 # Passwords
+aws.pem
 credentials_campaign.txt
 credentials_greenhouse.txt
 credentials_heroku.txt
+
+##Cache stuff
+__pycache__
 
 # General
 .DS_Store
