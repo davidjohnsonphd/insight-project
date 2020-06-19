@@ -225,10 +225,11 @@ app.layout = html.Div([
         }),
     html.Div(
         [
-            dcc.DatePickerRange(id='date-picker-range',
-                                start_date=pd.to_datetime(
-                                    df['Campaign'].unique()[0]),
-                                end_date=max_date)
+            dcc.DatePickerRange(
+                id='date-picker-range',
+                start_date=pd.to_datetime(df['Campaign'].unique()[0]) -
+                dt.timedelta(days=3),
+                end_date=max_date)
         ],
         style={
             'width': '100%',
