@@ -7,14 +7,12 @@ import pandas as pd
 
 # Other utilities
 import datetime as dt # For datetime
-import random # For random draws
-import re # For regular expressions
 import psycopg2 # For querying databases
 
 # Create a dictionary with group names and their size in proportion to each 
 # other. This is the 'interactive' portion of the script.
 groups = pd.DataFrame({
-    'C': .20, 'A': .40, 'B': .40
+    'Control': .20, 'Generic': .40, 'Personalized': .40
     }.items(), columns=['group', 'size'])
 
 # Function to execute SQL queries
@@ -62,7 +60,7 @@ connection = psycopg2.connect(database=heroku[0].strip(),
 
 # Extract relevant columns
 all_apps = execute_query("""
-SELECT hashed_email_address, created_at, updated_at, ai_motivation, 
+SELECT hashed_email_address, program, created_at, updated_at, ai_motivation, 
        ai_tools, coursework, dc_education, dc_innovation,
        dc_motivation, de_motivation, debugging, dev_ops_motivation,
        ds_motivation, largest_codebase, largest_team,
@@ -76,12 +74,13 @@ FROM consulting_heroku_export;
 all_apps = pd.DataFrame(
     all_apps,
     columns=[
-        'hashed_email_address', 'created_at', 'updated_at', 'ai_motivation',
-        'ai_tools', 'coursework', 'dc_education', 'dc_innovation',
-        'dc_motivation', 'de_motivation', 'debugging', 'dev_ops_motivation',
-        'ds_motivation', 'largest_codebase', 'largest_team', 'ml_innovation',
-        'ml_problem', 'networking', 'sec_motivation', 'sec_tradeoffs',
-        'side_projects', 'statistical_methods', 'technical_tradeoffs', 'tools'
+        'hashed_email_address', 'program', 'created_at', 'updated_at',
+        'ai_motivation', 'ai_tools', 'coursework', 'dc_education',
+        'dc_innovation', 'dc_motivation', 'de_motivation', 'debugging',
+        'dev_ops_motivation', 'ds_motivation', 'largest_codebase',
+        'largest_team', 'ml_innovation', 'ml_problem', 'networking',
+        'sec_motivation', 'sec_tradeoffs', 'side_projects',
+        'statistical_methods', 'technical_tradeoffs', 'tools'
     ])
 
 # Replace empty strings with NaN
@@ -114,8 +113,8 @@ keep_applications = gibberish.sum(axis=1, skipna=True) < 5
 # typically don't have any spaces
 all_apps = all_apps[keep_applications]
 
-# Subset only relevant columns
-all_apps = all_apps[['hashed_email_address', 'updated_at']]
+#Subset only relevant columns
+all_apps = all_apps[['hashed_email_address', 'program', 'updated_at']]
 
 # Change data to datetype format in completed app dataset
 all_completed['application_submission_date'] = pd.to_datetime(
@@ -148,9 +147,13 @@ current_session = df['cohort'].sort_values(ascending = False).iloc[0]
 # Create a boolean indicating if an app was submitted in the current session
 df['current_submission'] = df['cohort'] == current_session
 
+# Create a boolean indicating who has information about their program
+df['has_program'] = df['program'].notna() 
+
 # Create a boolean indicating who to nudge
-# Based on activity in past six months and no current submission
-df['to_nudge'] = df['updated_recent'] & (df['current_submission'] == False)
+# Based on activity in past six months, no current submission, program info
+df['to_nudge'] = df['updated_recent'] & (
+    df['current_submission'] == False) & df['has_program']
 
 # Create a string with today's date to track campaign
 todays_date = 'campaign_' + pd.to_datetime('today').strftime("%m/%d/%Y")
