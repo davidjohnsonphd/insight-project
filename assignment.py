@@ -150,10 +150,14 @@ df['current_submission'] = df['cohort'] == current_session
 # Create a boolean indicating who has information about their program
 df['has_program'] = df['program'].notna() 
 
+# Create a boolean indicating who reported interest in the top four programs
+top_four = ['Data Science', 'Artificial Intelligence', 'Data Engineering', 'Health Data Science']
+df['top_four'] = df['program'].isin(top_four)
+
 # Create a boolean indicating who to nudge
-# Based on activity in past six months, no current submission, program info
+# Based on activity in past six months, no current submission, and program information
 df['to_nudge'] = df['updated_recent'] & (
-    df['current_submission'] == False) & df['has_program']
+    df['current_submission'] == False) & df['top_four']
 
 # Create a string with today's date to track campaign
 todays_date = 'campaign_' + pd.to_datetime('today').strftime("%m/%d/%Y")
@@ -172,7 +176,7 @@ df.loc[df['to_nudge'], todays_date] = np.random.choice(groups['group'],
 
 # Create a csv file with emails randomly assigned to campaigns
 email_list = df.loc[df[todays_date].notna(
-), ['hashed_email_address', todays_date]]
+), ['hashed_email_address', 'program', todays_date]]
 email_list.sort_values(todays_date, inplace=True)
 email_list.to_csv('email_list_' +
                   pd.to_datetime('today').strftime("%m-%d-%Y") + '.csv',
