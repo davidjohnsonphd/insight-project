@@ -4,6 +4,9 @@ credentials_campaign.txt
 credentials_greenhouse.txt
 credentials_heroku.txt
 
+# Email lists
+email_list
+
 ##Cache stuff
 __pycache__
 .gitattributes

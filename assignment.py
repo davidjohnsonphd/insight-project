@@ -39,7 +39,8 @@ connection = psycopg2.connect(database=greenhouse[0].strip(),
 
 # Extract relevant columns
 all_completed = execute_query(query = """
-SELECT hashed_email_address, year, session, application_submission_date 
+SELECT hashed_email_address, year, session, application_submission_date,
+       currnent_stage_in_greenhouse, do_not_interview_tag 
 FROM completed_apps;
 """, connection = connection)
 
@@ -47,7 +48,8 @@ FROM completed_apps;
 all_completed = pd.DataFrame(all_completed,
                              columns=[
                                  'hashed_email_address', 'year', 'session',
-                                 'application_submission_date'
+                                 'application_submission_date', 'status',
+                                 'dont_interview'
                              ])
 
 # Get data on unfinished applications from heroku server
@@ -147,17 +149,34 @@ current_session = df['cohort'].sort_values(ascending = False).iloc[0]
 # Create a boolean indicating if an app was submitted in the current session
 df['current_submission'] = df['cohort'] == current_session
 
+# Create a boolean indicating whether an applicant was accepted in a prior session
+df['accepted'] = df['status'] == 'Accepted'
+
 # Create a boolean indicating who has information about their program
 df['has_program'] = df['program'].notna() 
 
 # Create a boolean indicating who reported interest in the top four programs
-top_four = ['Data Science', 'Artificial Intelligence', 'Data Engineering', 'Health Data Science']
+top_four = [
+    'Data Science', 
+    'Artificial Intelligence', 
+    'Data Engineering',
+    'Health Data Science'
+]
 df['top_four'] = df['program'].isin(top_four)
 
-# Create a boolean indicating who to nudge
-# Based on activity in past six months, no current submission, and program information
-df['to_nudge'] = df['updated_recent'] & (
-    df['current_submission'] == False) & df['top_four']
+# Create a boolean indicating who to nudge:
+# 1) Activity in the past 6 months
+# 2) No submission in current cycle
+# 3) Has information about a program of interest
+# 4) Not accepted to Insight already
+# 5) Not on avoid list
+df['to_nudge'] = (
+    (df['updated_recent']) & 
+    (df['current_submission'] == False) & 
+    (df['top_four']) & 
+    (df['accepted'] == False) & 
+    ((df['dont_interview'] == False) | df['dont_interview'].isna())
+                 )
 
 # Create a string with today's date to track campaign
 todays_date = 'campaign_' + pd.to_datetime('today').strftime("%m/%d/%Y")
