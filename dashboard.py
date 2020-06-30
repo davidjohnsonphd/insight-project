@@ -93,7 +93,7 @@ df_dash.loc[df_dash['campaign_06/15/2020'] ==
 
 # Function to generate fake data for demo
 start = pd.to_datetime('06/15/2020')
-end = start + dt.timedelta(days=10)
+end = pd.to_datetime('today').normalize()
 
 
 def random_time(start, end):
@@ -105,21 +105,21 @@ def random_time(start, end):
 
 # Generate the fake data for groups
 a_group = df_dash.loc[df_dash['campaign_06/15/2020'] == 'A', ].sample(
-    150, random_state=1337).index
+    300, random_state=1337).index
 df_dash.loc[df_dash.index[a_group],
             'application_submission_date'] = df_dash.iloc[a_group, ].apply(
                 lambda x: random_time(start, end), 1)
 df_dash.loc[df_dash.index[a_group], 'cohort'] = current_session
 
 b_group = df_dash.loc[df_dash['campaign_06/15/2020'] == 'B', ].sample(
-    100, random_state=1337).index
+    200, random_state=1337).index
 df_dash.loc[df_dash.index[b_group],
             'application_submission_date'] = df_dash.iloc[b_group, ].apply(
                 lambda x: random_time(start, end), 1)
 df_dash.loc[df_dash.index[b_group], 'cohort'] = current_session
 
 c_group = df_dash.loc[df_dash['campaign_06/15/2020'] == 'Control', ].sample(
-    50, random_state=1337).index
+    100, random_state=1337).index
 df_dash.loc[df_dash.index[c_group],
             'application_submission_date'] = df_dash.iloc[c_group, ].apply(
                 lambda x: random_time(start, end), 1)
@@ -376,7 +376,7 @@ def update_output_text(start_date, end_date, value_campaign):
     index_num = 0
     for i in conditions:
         if (i != 'None') & (i != 'Control'):
-            message = 'The lift for Condition {} is {}%. '.format(
+            message = 'The lift for the {} campaign is {}%. '.format(
                 i, lift[index_num])
             lift_statement = lift_statement + message
             index_num = +1
