@@ -15,6 +15,9 @@ import dash_html_components as html
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output
 
+# For fishers exact test
+from scipy import stats
+
 #For querying and creating databases
 from sqlalchemy import create_engine
 
@@ -324,8 +327,8 @@ def update_output_figure(start_date, end_date, value_counts, value_campaign):
                 data_list.append(
                     go.Scatter(
                         x=df_subset['Date'],
-                        y=(df_subset['Counts'] /
-                           (df_subset['Size'].mean() / study_size)).round(),
+                        y=((df_subset['Counts'] / df_subset['Size'].mean()) *  
+                           (study_size / (len(conditions) - 1))).round(),
                         name=i))
         return {
             'data':
@@ -356,6 +359,7 @@ def update_output_text(start_date, end_date, value_campaign):
     ).sum()
     lift_list = []
     control_list = []
+    chi_list = []
     for i in conditions:
         if (i != 'None') & (i != 'Control'):
             df_subset = df_date[df_date['Condition'] == i].copy()
@@ -363,21 +367,27 @@ def update_output_text(start_date, end_date, value_campaign):
                                                 study_size)
             lift = lift.round().astype('int')
             lift_list.append(lift)
+            chi_counts = ([df_subset['Counts'].sum(), 
+                           df_subset['Size'].mean() - df_subset['Counts'].sum()])
+            chi_list.append(chi_counts)            
         if i == 'Control':
             df_subset = df_date[df_date['Condition'] == i].copy()
             lift = df_subset['Counts'].sum() / (df_subset['Size'].mean() /
                                                 study_size)
             lift = lift.round().astype('int')
             control_list.append(lift)
+            con_counts = ([df_subset['Counts'].sum(), 
+                           df_subset['Size'].mean() - df_subset['Counts'].sum()])
     lift = (np.array(lift_list) -
             np.array(control_list)) / np.array(control_list)
     lift = (lift * 100).round().astype('int')
     lift_statement = ''
     index_num = 0
     for i in conditions:
+        p_value = stats.fisher_exact([chi_list[index_num], con_counts])[1]
         if (i != 'None') & (i != 'Control'):
-            message = 'The lift for the {} campaign is {}%. '.format(
-                i, lift[index_num])
+            message = 'Lift for {} campaign is {}%, p = {:.2f}. '.format(
+                i, lift[index_num], p_value)
             lift_statement = lift_statement + message
             index_num = +1
     return lift_statement
